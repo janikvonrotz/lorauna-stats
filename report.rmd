@@ -1,0 +1,82 @@
+---
+title: "report"
+author: "Janik von Rotz"
+date: "4/16/2019"
+output: html_document
+---
+
+```{r libaries, include=FALSE}
+library('rjson')
+library('mongolite')
+library('magrittr')
+library('dplyr')
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load config files
+readRenviron(".env")
+```
+
+```{r data, include=FALSE,eval=FALSE}
+# setup connection
+connection <- mongo(collection = "visitor", db = "lorauna", url = Sys.getenv("MONGO_URL"))
+
+# read and filter visitors data
+visitors <- connection$find(
+  query = '{
+    "created": { "$gte" : { "$date" : "2019-01-01T00:00:00Z" }},
+    "created": { "$lte" : { "$date" : "2019-01-15T00:00:00Z" }}
+  }'
+)
+
+# add date column
+visitors$date <- as.Date(visitors$created)
+
+# add day column
+visitors$day <- format(visitors$date, '%d')
+
+# add week day column
+visitors$weekday <- weekdays(as.Date(visitors$date))
+
+# add month column
+visitors$month <- months(as.Date(visitors$date))
+
+# filter weekdays
+visitors <- visitors %>% filter(weekday %in% c('Monday', 'Tuesday', 'Friday', 'Saturday', 'Sunday'))
+
+# filter incoming visitors
+visitors_in <- visitors %>% filter(value == 1)
+
+# sum by month
+sum_by_month <- aggregate(visitors_in['value'], by=visitors_in['month'], sum)
+```
+
+```{r config, include=FALSE}
+month <- 'January'
+```
+
+# `r month`
+
+In January there were x visitors.
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars, eval=FALSE}
+summary(visitors)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

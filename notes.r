@@ -1,6 +1,7 @@
 library('mongolite')
 library('magrittr')
 library('dplyr')
+library('readr')
 
 # load config
 readRenviron(".env")
@@ -34,13 +35,13 @@ visitors <- visitors %>% filter(weekday %in% c('Monday', 'Tuesday', 'Friday', 'S
 # filter incoming visitors
 visitors_in <- visitors %>% filter(value == 1)
 
-# count positive values per day
+# aggregate by weekday or day
 aggregate(visitors_in['value'], by=visitors_in['weekday'], sum)
 aggregate(visitors_in['value'], by=visitors_in['day'], sum)
 
-# make a report for each month
+# read all visitors and export to json file
+visitors_all <- connection$find()
+visitors_all %>% toJSON() %>% write_lines('visitors.json')
 
-# sum count of visitors
-
-# show average frequency by weekday
-
+# read json
+visitors <- fromJSON(file='visitors.json')
