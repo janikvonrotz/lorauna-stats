@@ -1,5 +1,5 @@
 ---
-title: "report"
+title: "Lorauna Report"
 author: "Janik von Rotz"
 date: "4/16/2019"
 output: html_document
@@ -19,7 +19,13 @@ knitr::opts_chunk$set(echo = TRUE)
 readRenviron(".env")
 ```
 
-```{r data, include=FALSE,eval=FALSE}
+This document provides insight about data gathered by the lorauna app. During the 2018/2019 sauna season the entrering and exiting visitors have been continiously logged by the on-premise receptionist This log entries are now used to analyze the seasons performance.
+
+# Data
+
+The dataset to create this report is pulled directly from the lorauna database and has been prepared in the following manner:
+
+```{r data}
 # setup connection
 connection <- mongo(collection = "visitor", db = "lorauna", url = Sys.getenv("MONGO_URL"))
 
@@ -27,7 +33,7 @@ connection <- mongo(collection = "visitor", db = "lorauna", url = Sys.getenv("MO
 visitors <- connection$find(
   query = '{
     "created": { "$gte" : { "$date" : "2019-01-01T00:00:00Z" }},
-    "created": { "$lte" : { "$date" : "2019-01-15T00:00:00Z" }}
+    "created": { "$lte" : { "$date" : "2019-02-31T00:00:00Z" }}
   }'
 )
 
@@ -46,37 +52,85 @@ visitors$month <- months(as.Date(visitors$date))
 # filter weekdays
 visitors <- visitors %>% filter(weekday %in% c('Monday', 'Tuesday', 'Friday', 'Saturday', 'Sunday'))
 
+# define weekday factors for sorting
+visitors$weekday <- factor(visitors$weekday, levels= c("Monday", 
+    "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
 # filter incoming visitors
 visitors_in <- visitors %>% filter(value == 1)
-
-# sum by month
-sum_by_month <- aggregate(visitors_in['value'], by=visitors_in['month'], sum)
 ```
 
-```{r config, include=FALSE}
-month <- 'January'
+Summary of the dataset:
+
+```{r summary}
+summary(visitors_in)
 ```
 
-# `r month`
+# Summary by Month
 
-In January there were x visitors.
+In the following chapters you will find relevant data and a verdict for each month.
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars, eval=FALSE}
-summary(visitors)
+```{r, include=FALSE}
+filter_month <- 'January'
 ```
 
-## Including Plots
+## `r month`
 
-You can also embed plots, for example:
+```{r, include=FALSE}
+# filter visitors by month
+visitors_filtered <- visitors_in %>% filter(month == filter_month)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# calculate count of visitors for this month
+visitors_count <- sum(visitors_filtered$value)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+In `r filter_month` there were `r visitors_count` visitors.
+
+The following bar plot shows the average distribution by weekday:
+
+```{r, include=FALSE}
+# get count of visitors by date and weekday
+visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
+
+# calculate average by weekday
+visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_weekday['weekday'], FUN=mean)
+
+# sort visitors
+visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+```
+
+```{r, echo=FALSE}
+barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
+```
+```{r, include=FALSE}
+filter_month <- 'February'
+```
+
+## `r month`
+
+```{r, include=FALSE}
+# filter visitors by month
+visitors_filtered <- visitors_in %>% filter(month == filter_month)
+
+# calculate count of visitors for this month
+visitors_count <- sum(visitors_filtered$value)
+```
+
+In `r filter_month` there were `r visitors_count` visitors.
+
+The following bar plot shows the average distribution by weekday:
+
+```{r, include=FALSE}
+# get count of visitors by date and weekday
+visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
+
+# calculate average by weekday
+visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_weekday['weekday'], FUN=mean)
+
+# sort visitors
+visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+```
+
+```{r, echo=FALSE}
+barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
+```
