@@ -25,15 +25,15 @@ This document provides insight about data gathered by the lorauna app. During th
 
 The dataset to create this report is pulled directly from the lorauna database and has been prepared in the following manner:
 
-```{r data}
+```{r data, cache=TRUE}
 # setup connection
 connection <- mongo(collection = "visitor", db = "lorauna", url = Sys.getenv("MONGO_URL"))
 
 # read and filter visitors data
 visitors <- connection$find(
   query = '{
-    "created": { "$gte" : { "$date" : "2019-01-01T00:00:00Z" }},
-    "created": { "$lte" : { "$date" : "2019-02-31T00:00:00Z" }}
+    "created": { "$gte" : { "$date" : "2018-11-01T00:00:00Z" }},
+    "created": { "$lte" : { "$date" : "2019-03-31T00:00:00Z" }}
   }'
 )
 
@@ -53,8 +53,11 @@ visitors$month <- months(as.Date(visitors$date))
 visitors <- visitors %>% filter(weekday %in% c('Monday', 'Tuesday', 'Friday', 'Saturday', 'Sunday'))
 
 # define weekday factors for sorting
-visitors$weekday <- factor(visitors$weekday, levels= c("Monday", 
+visitors$weekday <- factor(visitors$weekday, levels=c("Monday", 
     "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# define month factors for sorting
+visitors$month <- factor(visitors$month, levels=c("November", "December", "January", "February", "March"))
 
 # filter incoming visitors
 visitors_in <- visitors %>% filter(value == 1)
@@ -68,13 +71,24 @@ summary(visitors_in)
 
 # Summary by Month
 
-In the following chapters you will find relevant data and a verdict for each month.
+Sum of visitors for each month:
 
-```{r, include=FALSE}
-filter_month <- 'January'
+```{r, echo=FALSE}
+# get sum of visitors for each month
+visitors_by_month <- aggregate(visitors_in['value'], by=list(month=visitors_in$month), FUN=sum)
+
+# sort visitors
+visitors_by_month <- visitors_by_month[order(visitors_by_month$month),]
+
+# create bar plot
+barplot(visitors_by_month$value, names.arg=visitors_by_month$month)
 ```
 
-## `r month`
+```{r, include=FALSE}
+filter_month <- 'November'
+```
+
+## `r filter_month`
 
 ```{r, include=FALSE}
 # filter visitors by month
@@ -84,11 +98,11 @@ visitors_filtered <- visitors_in %>% filter(month == filter_month)
 visitors_count <- sum(visitors_filtered$value)
 ```
 
-In `r filter_month` there were `r visitors_count` visitors.
+In `r filter_month` there were **`r visitors_count`** visitors.
 
 The following bar plot shows the average distribution by weekday:
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 # get count of visitors by date and weekday
 visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
 
@@ -97,16 +111,80 @@ visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_we
 
 # sort visitors
 visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+
+# create barplot
+barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
 ```
 
+
+```{r, include=FALSE}
+filter_month <- 'December'
+```
+
+## `r filter_month`
+
+```{r, include=FALSE}
+# filter visitors by month
+visitors_filtered <- visitors_in %>% filter(month == filter_month)
+
+# calculate count of visitors for this month
+visitors_count <- sum(visitors_filtered$value)
+```
+
+In `r filter_month` there were **`r visitors_count`** visitors.
+
+The following bar plot shows the average distribution by weekday:
+
 ```{r, echo=FALSE}
+# get count of visitors by date and weekday
+visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
+
+# calculate average by weekday
+visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_weekday['weekday'], FUN=mean)
+
+# sort visitors
+visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+
+# create bar plot
+barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
+```
+
+```{r, include=FALSE}
+filter_month <- 'January'
+```
+
+## `r filter_month`
+
+```{r, include=FALSE}
+# filter visitors by month
+visitors_filtered <- visitors_in %>% filter(month == filter_month)
+
+# calculate count of visitors for this month
+visitors_count <- sum(visitors_filtered$value)
+```
+
+In `r filter_month` there were **`r visitors_count`** visitors.
+
+The following bar plot shows the average distribution by weekday:
+
+```{r, echo=FALSE}
+# get count of visitors by date and weekday
+visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
+
+# calculate average by weekday
+visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_weekday['weekday'], FUN=mean)
+
+# sort visitors
+visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+
+# create barplot
 barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
 ```
 ```{r, include=FALSE}
 filter_month <- 'February'
 ```
 
-## `r month`
+## `r filter_month`
 
 ```{r, include=FALSE}
 # filter visitors by month
@@ -116,11 +194,11 @@ visitors_filtered <- visitors_in %>% filter(month == filter_month)
 visitors_count <- sum(visitors_filtered$value)
 ```
 
-In `r filter_month` there were `r visitors_count` visitors.
+In `r filter_month` there were **`r visitors_count`** visitors.
 
 The following bar plot shows the average distribution by weekday:
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 # get count of visitors by date and weekday
 visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
 
@@ -129,8 +207,43 @@ visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_we
 
 # sort visitors
 visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
-```
 
-```{r, echo=FALSE}
+# create barplot
 barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
 ```
+
+```{r, include=FALSE}
+filter_month <- 'March'
+```
+
+## `r filter_month`
+
+```{r, include=FALSE}
+# filter visitors by month
+visitors_filtered <- visitors_in %>% filter(month == filter_month)
+
+# calculate count of visitors for this month
+visitors_count <- sum(visitors_filtered$value)
+```
+
+In `r filter_month` there were **`r visitors_count`** visitors.
+
+The following bar plot shows the average distribution by weekday:
+
+```{r, echo=FALSE}
+# get count of visitors by date and weekday
+visitors_by_weekday <- aggregate(visitors_in['value'], by=list(date=visitors_in$date, weekday=visitors_in$weekday), FUN=sum)
+
+# calculate average by weekday
+visitors_by_weekday <- aggregate(visitors_by_weekday['value'], by=visitors_by_weekday['weekday'], FUN=mean)
+
+# sort visitors
+visitors_by_weekday <- visitors_by_weekday[order(visitors_by_weekday$weekday),]
+
+# create barplot
+barplot(visitors_by_weekday$value, names.arg=visitors_by_weekday$weekday)
+```
+
+# Source
+
+The source code for creating this report has been published to [Github - janikvonrotz/lorauna-stats](https://github.com/janikvonrotz/lorauna-stats).
